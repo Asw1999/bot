@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CoC Bot</string>
+    <string name="accessibility_description">CoC Bot needs accessibility to perform taps and swipes on the game screen.</string>
+    <string name="start_bot">START BOT</string>
+    <string name="stop_bot">STOP BOT</string>
+    <string name="status_idle">Idle</string>
+    <string name="status_running">Running</string>
+    <string name="channel_name">CoC Bot Service</string>
+</resources>

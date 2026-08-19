@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.CocBot" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#FF6D28</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSecondary">#4CAF50</item>
+    </style>
+</resources>
