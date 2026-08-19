@@ -50,13 +50,27 @@ class ScreenCaptureService : Service() {
     }
 
     private fun startForegroundNotification() {
-        val notification = NotificationCompat.Builder(this, CocBotApp.CHANNEL_ID)
-            .setContentTitle("CoC Bot")
-            .setContentText("Screen capture active")
-            .setSmallIcon(R.drawable.ic_bot)
-            .setOngoing(true)
-            .build()
-        startForeground(NOTIFICATION_ID, notification)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            val notification = NotificationCompat.Builder(this, CocBotApp.CHANNEL_ID)
+                .setContentTitle("CoC Bot")
+                .setContentText("Screen capture active")
+                .setSmallIcon(R.drawable.ic_bot)
+                .setOngoing(true)
+                .build()
+            startForeground(
+                NOTIFICATION_ID,
+                notification,
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+            )
+        } else {
+            val notification = NotificationCompat.Builder(this, CocBotApp.CHANNEL_ID)
+                .setContentTitle("CoC Bot")
+                .setContentText("Screen capture active")
+                .setSmallIcon(R.drawable.ic_bot)
+                .setOngoing(true)
+                .build()
+            startForeground(NOTIFICATION_ID, notification)
+        }
     }
 
     private fun acquireWakeLock() {
@@ -70,6 +84,13 @@ class ScreenCaptureService : Service() {
     private fun startProjection(resultCode: Int, data: Intent) {
         val mpm = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         mediaProjection = mpm.getMediaProjection(resultCode, data)
+
+        // Callback required on Android 14+ (API 34)
+        mediaProjection?.registerCallback(object : MediaProjection.Callback() {
+            override fun onStop() {
+                stopProjection()
+            }
+        }, null)
 
         val metrics = resources.displayMetrics
         val w = metrics.widthPixels
