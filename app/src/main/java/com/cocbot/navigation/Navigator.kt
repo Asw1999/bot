@@ -72,13 +72,16 @@ class Navigator(
     private suspend fun tapButton(templateName: String, fallback: Pair<Float, Float>?): Boolean {
         val frame = capture.captureFrame()
         if (frame != null) {
-            val match = detector.findButton(frame, templateName)
-            frame.recycle()
-            if (match != null) {
-                val x = match.centerX.toFloat()
-                val y = match.centerY.toFloat()
-                BotLog.i("Tap $templateName at ($x, $y)")
-                return input.tap(x, y, 3)
+            try {
+                val match = detector.findButton(frame, templateName)
+                if (match != null) {
+                    val x = match.centerX.toFloat()
+                    val y = match.centerY.toFloat()
+                    BotLog.i("Tap $templateName at ($x, $y)")
+                    return input.tap(x, y, 3)
+                }
+            } finally {
+                frame.recycle()
             }
         }
         // Fallback to hardcoded coords

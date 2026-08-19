@@ -3,6 +3,8 @@ package com.cocbot
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import org.opencv.android.OpenCVLoader
+import com.cocbot.util.BotLog
 
 class CocBotApp : Application() {
     companion object {
@@ -17,5 +19,12 @@ class CocBotApp : Application() {
             NotificationManager.IMPORTANCE_LOW
         )
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+
+        // Initialize OpenCV
+        if (OpenCVLoader.initLocal()) {
+            BotLog.i("OpenCV loaded successfully")
+        } else {
+            BotLog.e("OpenCV initialization failed")
+        }
     }
 }

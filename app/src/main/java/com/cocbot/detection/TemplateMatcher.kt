@@ -44,22 +44,28 @@ class TemplateMatcher(private val ctx: Context) {
     }
 
     fun findMatch(frame: Bitmap, templateName: String, threshold: Double = 0.85): MatchResult? {
+        if (frame.isRecycled) return null
         val tmpl = loadTemplate(templateName) ?: return null
         val src = Mat()
-        Utils.bitmapToMat(frame, src)
-        Imgproc.cvtColor(src, src, Imgproc.COLOR_RGBA2BGR)
+        try {
+            Utils.bitmapToMat(frame, src)
+            Imgproc.cvtColor(src, src, Imgproc.COLOR_RGBA2BGR)
 
-        val result = Mat()
-        Imgproc.matchTemplate(src, tmpl, result, Imgproc.TM_CCOEFF_NORMED)
+            val result = Mat()
+            Imgproc.matchTemplate(src, tmpl, result, Imgproc.TM_CCOEFF_NORMED)
 
-        val mmr = Core.minMaxLoc(result)
-        src.release()
-        result.release()
+            val mmr = Core.minMaxLoc(result)
+            src.release()
+            result.release()
 
-        return if (mmr.maxVal >= threshold) {
-            MatchResult(templateName, mmr.maxLoc.x.toInt(), mmr.maxLoc.y.toInt(),
-                tmpl.cols(), tmpl.rows(), mmr.maxVal)
-        } else null
+            return if (mmr.maxVal >= threshold) {
+                MatchResult(templateName, mmr.maxLoc.x.toInt(), mmr.maxLoc.y.toInt(),
+                    tmpl.cols(), tmpl.rows(), mmr.maxVal)
+            } else null
+        } catch (e: Exception) {
+            src.release()
+            return null
+        }
     }
 
     fun findAllMatches(frame: Bitmap, templateName: String, threshold: Double = 0.85): List<MatchResult> {

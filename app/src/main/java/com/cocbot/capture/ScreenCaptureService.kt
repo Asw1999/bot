@@ -81,6 +81,8 @@ class ScreenCaptureService : Service() {
         ).apply { acquire(4 * 60 * 60 * 1000L) } // 4 hours max
     }
 
+    private val bitmapLock = Any()
+
     private fun startProjection(resultCode: Int, data: Intent) {
         val mpm = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         mediaProjection = mpm.getMediaProjection(resultCode, data)
@@ -114,11 +116,18 @@ class ScreenCaptureService : Service() {
 
                 // Crop to exact screen size (remove row padding)
                 val cropped = if (rowPadding > 0) {
-                    Bitmap.createBitmap(bmp, 0, 0, w, h).also { bmp.recycle() }
+                    val c = Bitmap.createBitmap(bmp, 0, 0, w, h)
+                    bmp.recycle()
+                    c
                 } else bmp
 
-                latestBitmap?.recycle()
-                latestBitmap = cropped
+                synchronized(bitmapLock) {
+                    val old = latestBitmap
+                    latestBitmap = cropped
+                    old?.recycle()
+                }
+            } catch (e: Exception) {
+                // Ignore transient frame capture errors
             } finally {
                 image.close()
             }
@@ -138,8 +147,10 @@ class ScreenCaptureService : Service() {
         virtualDisplay?.release()
         imageReader?.close()
         mediaProjection?.stop()
-        latestBitmap?.recycle()
-        latestBitmap = null
+        synchronized(bitmapLock) {
+            latestBitmap?.recycle()
+            latestBitmap = null
+        }
         wakeLock?.let { if (it.isHeld) it.release() }
         instance = null
     }
@@ -149,9 +160,17 @@ class ScreenCaptureService : Service() {
         super.onDestroy()
     }
 
-    /** Grab latest captured frame. Returns null if not capturing. */
+    /** Grab a safe copy of the latest captured frame. */
     fun captureFrame(): Bitmap? {
-        return latestBitmap?.let { Bitmap.createBitmap(it) }
+        synchronized(bitmapLock) {
+            val bmp = latestBitmap ?: return null
+            if (bmp.isRecycled) return null
+            return try {
+                bmp.copy(Bitmap.Config.ARGB_8888, false)
+            } catch (e: Exception) {
+                null
+            }
+        }
     }
 
     companion object {
